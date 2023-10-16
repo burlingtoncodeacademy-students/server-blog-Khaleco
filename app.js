@@ -6,6 +6,8 @@ const routes = require("./controllers/routes");
 
 const PORT = 4000;
 
+app.use(express.static(`${__dirname}/public`))
+
 app.use("/routes", routes)
 
 app.listen(PORT, () => {

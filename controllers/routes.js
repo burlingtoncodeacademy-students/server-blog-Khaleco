@@ -1,30 +1,32 @@
 const router = require("express").Router();
 const fs = require("fs");
 const DB_PATH = "./api/blog.json";
-const { v4: uuidv4 } = require('uuid');
 
-// ! --------------------------- Controllers ---------------------------
+// ! -------------------------- Controllers --------------------------
 
 // ? Get All Posts
 router.get("/all", (req, res) => {
     try {
         let blogArray = read();
-        res.json({message: "all blogs success", blogs: blogArray});
+        res.json({message: "all blogs success", posts: blogArray});
     } catch (error) {
         res.status(500).json({message: "error", errorMessage: error.message,});
     }
 });
 
 // ? Get by Id
-router.get("/get-by-id/:id", (req, res) => {
+router.get("/get-by-id", (req, res) => {
     try{
+        const id = req.query.id;
         let blogArray = read();
-        let blog = blogArray.find((blog) => blog.post_id == req.params.id)
+        let blog = blogArray.find((blog) => blog.post_id == id);
+
         if(!blog){
         throw new Error("Blog Not Found");
         }
-        res.json({message: "blog by id success", blog: blog});
-    } catch(err){
+
+        res.json({message: "blog by id success", post: blog});
+    } catch(error){
         res.status(404).json({message: "error", errorMessage: error.message,});
     }
 });
@@ -49,24 +51,21 @@ router.post("/add", (req, res) => {
 })
 
 // ? Update blog
-router.patch("/update/:id", (req, res) => {
+router.patch("/update", (req, res) => {
     try {
+        const id = req.query.id;
         let blogArray = read();
-        let updatedBlog = blogArray.filter((post) => post.post_id == req.params.id);
-        const {title, author, body} = req.body;
-        updatedBlog = {
-            post_id: req.params.id,
-            title,
-            author,
-            body
+        let blogIndex = blogArray.findIndex((post) => post.post_id == id);
+
+        if (blogIndex == -1) {
+            throw new Error("Post not found.");
         }
-        let filteredBlogArray = blogArray.filter((post) => post.post_id != req.params.id);
-        if (blogArray.length == filteredBlogArray.length) {
-            throw new Error("Post not found");
-        }
-        save(filteredBlogArray);
-        blogArray = read();
-        blogArray.push(updatedBlog)
+
+        let updatedBlog = req.body;
+        let orginalObject = blogArray[blogIndex];
+
+        blogArray[blogIndex] = {...orginalObject, ...updatedBlog};
+        
         save(blogArray);
         res.json({message: "post updated successfully", updatedPost: updatedBlog});
     } catch (error) {
